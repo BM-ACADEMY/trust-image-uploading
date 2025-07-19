@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { Edit, Trash2, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
@@ -12,37 +12,37 @@ const ImageTable = () => {
   const [editTitle, setEditTitle] = useState("");
   const [editHeading, setEditHeading] = useState("");
   const [editFile, setEditFile] = useState(null);
-
   const [addMoreItem, setAddMoreItem] = useState(null);
   const [addMoreHeading, setAddMoreHeading] = useState("");
   const [addMoreFile, setAddMoreFile] = useState(null);
-
   const [deleteConfirm, setDeleteConfirm] = useState({
     itemId: null,
     index: null,
   });
-
   const [currentPage, setCurrentPage] = useState(1);
-  const ITEMS_PER_PAGE = 10;
+  const [isLoading, setIsLoading] = useState(false);
+  const ITEMS_PER_PAGE = 5;
+  const MAX_PAGE_BUTTONS = 5;
 
   useEffect(() => {
     fetchGallery();
   }, []);
 
   const fetchGallery = async () => {
+    setIsLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/gallery`);
       setGalleryItems(res.data);
     } catch (error) {
       toast.error("Failed to fetch gallery.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDelete = async (itemId, imageIndex) => {
     try {
-      await axios.delete(
-        `${API_BASE}/gallery/delete-image/${itemId}/${imageIndex}`
-      );
+      await axios.delete(`${API_BASE}/gallery/delete-image/${itemId}/${imageIndex}`);
       toast.success("Image deleted successfully!");
       fetchGallery();
     } catch (error) {
@@ -107,22 +107,42 @@ const ImageTable = () => {
     }
   };
 
-  const flattened = galleryItems.flatMap((item) =>
-    item.images.map((img, idx) => ({
-      ...img,
-      imageUrl: img.imageUrl,
-      imageHeading: img.imageHeading,
-      itemId: item._id,
-      title: item.title,
-      index: idx,
-    }))
+  const flattened = useMemo(
+    () =>
+      galleryItems.flatMap((item) =>
+        item.images.map((img, idx) => ({
+          ...img,
+          imageUrl: img.imageUrl,
+          imageHeading: img.imageHeading,
+          itemId: item._id,
+          title: item.title,
+          index: idx,
+        }))
+      ),
+    [galleryItems]
   );
 
   const totalPages = Math.ceil(flattened.length / ITEMS_PER_PAGE);
-  const paginated = flattened.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+  const paginated = useMemo(
+    () =>
+      flattened.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+      ),
+    [flattened, currentPage]
   );
+
+  const getPageRange = () => {
+    const half = Math.floor(MAX_PAGE_BUTTONS / 2);
+    let start = Math.max(1, currentPage - half);
+    let end = Math.min(totalPages, start + MAX_PAGE_BUTTONS - 1);
+
+    if (end - start + 1 < MAX_PAGE_BUTTONS) {
+      start = Math.max(1, end - MAX_PAGE_BUTTONS + 1);
+    }
+
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 md:px-12 lg:px-20 py-6">
@@ -146,65 +166,82 @@ const ImageTable = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
-              {paginated.map((img) => (
-                <tr
-                  key={`${img.itemId}-${img.index}`}
-                  className="hover:bg-gray-100"
-                >
-                  <td className="px-6 py-4 text-sm font-semibold text-gray-800">
-                    {img.title}
-                  </td>
-                  <td
-                    className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate"
-                    title={img.imageHeading}
-                  >
-                    {img.imageHeading}
-                  </td>
-                  <td className="px-6 py-4">
-                    <img
-                      src={`${API_BASE.replace("/api", "")}${img.imageUrl}`}
-                      alt={img.imageHeading}
-                      className="w-16 h-16 object-cover rounded-lg border"
-                    />
-                  </td>
-                  <td className="px-6 py-4 text-sm">
-                    <div className="flex justify-center gap-2">
-                      <button
-                        onClick={() =>
-                          openEditModal(
-                            galleryItems.find((g) => g._id === img.itemId),
-                            img.index
-                          )
-                        }
-                        className="bg-indigo-500 hover:bg-indigo-600 text-white p-2 rounded-lg"
-                      >
-                        <Edit size={18} />
-                      </button>
-                      <button
-                        onClick={() =>
-                          setDeleteConfirm({
-                            itemId: img.itemId,
-                            index: img.index,
-                          })
-                        }
-                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                      <button
-                        onClick={() =>
-                          setAddMoreItem(
-                            galleryItems.find((g) => g._id === img.itemId)
-                          )
-                        }
-                        className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg"
-                      >
-                        <Plus size={18} />
-                      </button>
-                    </div>
+              {isLoading ? (
+                <tr>
+                  <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                    Loading...
                   </td>
                 </tr>
-              ))}
+              ) : paginated.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-6 py-4 text-center text-gray-500">
+                    No images found.
+                  </td>
+                </tr>
+              ) : (
+                paginated.map((img) => (
+                  <tr
+                    key={`${img.itemId}-${img.index}`}
+                    className="hover:bg-gray-100"
+                  >
+                    <td className="px-6 py-4 text-sm font-semibold text-gray-800">
+                      {img.title}
+                    </td>
+                    <td
+                      className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate"
+                      title={img.imageHeading}
+                    >
+                      {img.imageHeading}
+                    </td>
+                    <td className="px-6 py-4">
+                      <img
+                        src={`${API_BASE.replace("/api", "")}${img.imageUrl}`}
+                        alt={img.imageHeading}
+                        className="w-16 h-16 object-cover rounded-lg border"
+                      />
+                    </td>
+                    <td className="px-6 py-4 text-sm">
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() =>
+                            openEditModal(
+                              galleryItems.find((g) => g._id === img.itemId),
+                              img.index
+                            )
+                          }
+                          className="bg-indigo-500 hover:bg-indigo-600 text-white p-2 rounded-lg"
+                          aria-label="Edit image"
+                        >
+                          <Edit size={18} />
+                        </button>
+                        <button
+                          onClick={() =>
+                            setDeleteConfirm({
+                              itemId: img.itemId,
+                              index: img.index,
+                            })
+                          }
+                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg"
+                          aria-label="Delete image"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                        <button
+                          onClick={() =>
+                            setAddMoreItem(
+                              galleryItems.find((g) => g._id === img.itemId)
+                            )
+                          }
+                          className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg"
+                          aria-label="Add more images"
+                        >
+                          <Plus size={18} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -214,30 +251,34 @@ const ImageTable = () => {
           <div className="flex justify-center items-center gap-3 py-4">
             <button
               onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
+              disabled={currentPage === 1 || isLoading}
               className="px-3 py-1 rounded border text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+              aria-label="Previous page"
             >
               Prev
             </button>
-            {[...Array(totalPages)].map((_, i) => (
+            {getPageRange().map((page) => (
               <button
-                key={i}
-                onClick={() => setCurrentPage(i + 1)}
+                key={page}
+                onClick={() => setCurrentPage(page)}
                 className={`px-3 py-1 rounded border text-sm ${
-                  currentPage === i + 1
+                  currentPage === page
                     ? "bg-indigo-600 text-white"
-                    : "bg-white"
+                    : "bg-white hover:bg-gray-100"
                 }`}
+                aria-label={`Page ${page}`}
+                aria-current={currentPage === page ? "page" : undefined}
               >
-                {i + 1}
+                {page}
               </button>
             ))}
             <button
               onClick={() =>
                 setCurrentPage((prev) => Math.min(prev + 1, totalPages))
               }
-              disabled={currentPage === totalPages}
+              disabled={currentPage === totalPages || isLoading}
               className="px-3 py-1 rounded border text-sm bg-gray-100 hover:bg-gray-200 disabled:opacity-50"
+              aria-label="Next page"
             >
               Next
             </button>
@@ -259,7 +300,8 @@ const ImageTable = () => {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full border p-2 rounded"
+                  className="ieka w-full border p-2 rounded"
+                  aria-label="Gallery title"
                 />
               </div>
               <div>
@@ -271,6 +313,7 @@ const ImageTable = () => {
                   value={editHeading}
                   onChange={(e) => setEditHeading(e.target.value)}
                   className="w-full border p-2 rounded"
+                  aria-label="Image heading"
                 />
               </div>
               <div>
@@ -302,6 +345,7 @@ const ImageTable = () => {
                   id="edit-file-input"
                   onChange={(e) => setEditFile(e.target.files[0])}
                   className="hidden"
+                  aria-label="Upload new image"
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -309,12 +353,15 @@ const ImageTable = () => {
                   type="button"
                   onClick={() => setEditingItem(null)}
                   className="px-4 py-2 border rounded text-gray-600"
+                  aria-label="Cancel edit"
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
                   className="px-4 py-2 bg-indigo-600 text-white rounded"
+                  aria-label="Save changes"
                 >
                   Save
                 </button>
@@ -339,6 +386,7 @@ const ImageTable = () => {
                   value={addMoreHeading}
                   onChange={(e) => setAddMoreHeading(e.target.value)}
                   className="w-full border p-2 rounded"
+                  aria-label="New image heading"
                 />
               </div>
               <label
@@ -352,6 +400,9 @@ const ImageTable = () => {
                       alt="Preview"
                       className="w-full h-full object-cover"
                     />
+                    <span className="text-sm text-gray-600 mt-2">
+                      {addMoreFile.name}
+                    </span>
                   </div>
                 ) : (
                   <>
@@ -363,7 +414,7 @@ const ImageTable = () => {
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="M18.085 2.583H7.75a2.583 2.583 0 0 0-2.583 2.584v20.666a2.583 2.583 0 0 0 2.583 2.584h15.5a2.583 2.583 0 0 0 2.584-2.584v-15.5m-7.75-7.75 7.75 7.75m-7.75-7.75v7.75h7.75M15.5 23.25V15.5m-3.875 3.875h7.75"
+                        d="Mទ M18.085 2.583H7.75a2.583 2.583 0 0 0-2.583 2.584v20.666a2.583 2.583 0 0 0 2.583 2.584h15.5a2.583 2.583 0 0 0 2.584-2.584v-15.5m-7.75-7.75 7.75 7.75m-7.75-7.75v7.75h7.75M15.5 23.25V15.5m-3.875 3.875h7.75"
                         stroke="#2563EB"
                         strokeWidth="2"
                         strokeLinecap="round"
@@ -380,13 +431,13 @@ const ImageTable = () => {
                     </p>
                   </>
                 )}
-
                 <input
                   id="add-file-input"
                   type="file"
                   accept="image/*"
                   onChange={(e) => setAddMoreFile(e.target.files[0])}
                   className="hidden"
+                  aria-label="Upload new image"
                 />
               </label>
 
@@ -395,12 +446,14 @@ const ImageTable = () => {
                   type="button"
                   onClick={() => setAddMoreItem(null)}
                   className="px-9 py-2 border border-gray-500/50 bg-white hover:bg-blue-100/30 active:scale-95 transition-all text-gray-500 rounded"
+                  aria-label="Cancel upload"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 transition-all text-white rounded"
+                  aria-label="Upload image"
                 >
                   Upload File
                 </button>
@@ -425,6 +478,7 @@ const ImageTable = () => {
               <button
                 onClick={() => setDeleteConfirm({ itemId: null, index: null })}
                 className="px-4 py-2 border border-gray-400 text-gray-600 rounded hover:bg-gray-100"
+                aria-label="Cancel deletion"
               >
                 Cancel
               </button>
@@ -434,6 +488,7 @@ const ImageTable = () => {
                   setDeleteConfirm({ itemId: null, index: null });
                 }}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                aria-label="Confirm deletion"
               >
                 Confirm
               </button>
