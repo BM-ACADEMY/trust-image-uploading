@@ -1,6 +1,8 @@
 import React from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
+import about from '../assets/about1.jpeg';
+
 
 const AboutUs = () => {
   const controls = useAnimation();
@@ -26,7 +28,16 @@ const AboutUs = () => {
   }, [inView, controls]);
 
   return (
-    <section className="flex items-center bg-gray-50 px-4 py-12 md:px-8 lg:px-16">
+    <section className="bg-gray-50 px-4 py-12 md:px-8 lg:px-16">
+      {/* Centered h2 heading */}
+      <div className="text-center mb-12">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          அஸ்ஸலாமு அலைக்கும் வரஹ்...
+        </h2>
+     
+      </div>
+
+      {/* Image + Text Content */}
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-10">
         {/* Image Section */}
         <motion.div
@@ -36,7 +47,7 @@ const AboutUs = () => {
           className="w-full lg:w-1/2"
         >
           <img
-            src="https://via.placeholder.com/600x400"
+            src={about}
             alt="நோக்கங்கள்"
             className="w-full h-auto rounded-xl shadow-xl object-cover"
           />
@@ -44,16 +55,15 @@ const AboutUs = () => {
 
         {/* Content Section */}
         <div className="w-full lg:w-1/2 space-y-6 text-center lg:text-left">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-0">
-            சங்கத்தின் மையக்கருத்து
-          </h2>
-          <motion.div
-                  className="w-20 h-1 mx-auto mb-12 bg-gradient-to-r from-red-400 to-red-600 rounded-full mt-0"
-                  initial={{ width: 0 }}
-                  animate={{ width: '80px' }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                />
-         
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          சங்கத்தின் மையக்கருத்து
+        </h2>
+        <motion.div
+          className="w-20 h-1 mx-auto mt-3 bg-gradient-to-r from-red-400 to-red-600 rounded-full"
+          initial={{ width: 0 }}
+          animate={{ width: '80px' }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        />
           <p className="text-base md:text-lg text-gray-700 leading-relaxed">
             கடந்த <span className="text-indigo-600">2017</span> ஆம் ஆண்டு ஆரம்பிக்கப்பட்ட இந்த சங்கத்தின் நிறுவனர்
             <span className="text-indigo-600"> எம். அப்பாஸ்</span>, சங்கத் தலைவர்
