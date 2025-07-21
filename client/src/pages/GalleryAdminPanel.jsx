@@ -4,12 +4,15 @@ import toast, { Toaster } from "react-hot-toast";
 import { X } from "lucide-react";
 import ImageTable from "./ImageTable";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ImageUploadCard = () => {
   const [sectionHeadline, setSectionHeadline] = useState("");
   const [title, setTitle] = useState("");
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
 
@@ -64,6 +67,7 @@ const ImageUploadCard = () => {
       return;
     }
 
+    setLoading(true); // Start loading
     try {
       const formData = new FormData();
       formData.append("title", sectionHeadline);
@@ -73,19 +77,22 @@ const ImageUploadCard = () => {
         formData.append("images", item.file);
       });
 
-      const url = `${import.meta.env.VITE_API_BASE_URL}/gallery/create`;
-      await axios.post(url, formData, {
+      const url = `${API_BASE_URL}/gallery/create`;
+      const res = await axios.post(url, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
 
+      console.log("Upload response:", res.data); // Debug: Log API response
       toast.success("Gallery uploaded successfully!");
       setItems([]);
       setSectionHeadline("");
     } catch (error) {
       console.error("Upload error:", error);
-      toast.error("Upload failed.");
+      toast.error(error.response?.data?.message || "Upload failed.");
+    } finally {
+      setLoading(false); // Stop loading
     }
   };
 
@@ -110,6 +117,7 @@ const ImageUploadCard = () => {
             placeholder="Enter Gallery Heading"
             className="w-full px-3 py-2 mt-4 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             aria-label="Gallery Heading"
+            disabled={loading} // Disable during loading
           />
 
           <input
@@ -119,11 +127,14 @@ const ImageUploadCard = () => {
             placeholder="Enter image title"
             className="w-full mt-4 px-3 py-2 border rounded text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-400"
             aria-label="Image title"
+            disabled={loading} // Disable during loading
           />
 
           <label
             htmlFor="fileInput"
-            className="border-2 border-dotted border-gray-400 p-8 mt-4 flex flex-col items-center gap-4 cursor-pointer hover:border-blue-500 transition"
+            className={`border-2 border-dotted border-gray-400 p-8 mt-4 flex flex-col items-center gap-4 cursor-pointer hover:border-blue-500 transition ${
+              loading ? "opacity-50 pointer-events-none" : ""
+            }`}
           >
             {preview ? (
               <img src={preview} alt="Preview" className="max-h-40 max-w-full object-contain" />
@@ -151,13 +162,16 @@ const ImageUploadCard = () => {
               onChange={handleFileChange}
               accept="image/*"
               aria-label="Upload image"
+              disabled={loading} // Disable during loading
             />
           </label>
 
           <div className="mt-6 flex justify-end gap-4">
             <button
               type="button"
-              className="px-6 py-2 border border-gray-500/50 bg-white hover:bg-blue-100/30 active:scale-95 transition-all text-gray-500 rounded"
+              className={`px-6 py-2 border border-gray-500/50 bg-white hover:bg-blue-100/30 active:scale-95 transition-all text-gray-500 rounded ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               onClick={() => {
                 setTitle("");
                 setFile(null);
@@ -165,24 +179,57 @@ const ImageUploadCard = () => {
                 document.getElementById("fileInput").value = "";
               }}
               aria-label="Cancel upload"
+              disabled={loading}
             >
               Cancel
             </button>
             <button
               type="button"
-              className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 transition-all text-white rounded"
+              className={`px-6 py-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 transition-all text-white rounded ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               onClick={handleAdd}
               aria-label="Add image"
+              disabled={loading}
             >
               Add
             </button>
             <button
               type="button"
-              className="px-6 py-2 bg-green-500 hover:bg-green-600 active:scale-95 transition-all text-white rounded"
+              className={`px-6 py-2 bg-green-500 hover:bg-green-600 active:scale-95 transition-all text-white rounded relative ${
+                loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
               onClick={handleSubmit}
               aria-label="Submit gallery"
+              disabled={loading}
             >
-              Submit
+              {loading ? (
+                <span className="flex items-center justify-center">
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
+                    ></path>
+                  </svg>
+                  Uploading...
+                </span>
+              ) : (
+                "Submit"
+              )}
             </button>
           </div>
 
@@ -197,9 +244,12 @@ const ImageUploadCard = () => {
                     <span className="font-medium">{item.title}</span>
                   </div>
                   <X
-                    className="w-5 h-5 cursor-pointer text-gray-500 hover:text-red-500"
+                    className={`w-5 h-5 cursor-pointer text-gray-500 hover:text-red-500 ${
+                      loading ? "opacity-50 pointer-events-none" : ""
+                    }`}
                     onClick={() => handleRemove(item.id)}
                     aria-label={`Remove ${item.title}`}
+                    disabled={loading}
                   />
                 </div>
               ))}

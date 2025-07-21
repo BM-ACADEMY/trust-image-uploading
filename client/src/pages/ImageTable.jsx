@@ -21,6 +21,9 @@ const ImageTable = () => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false); // Loading state for edit
+  const [isAdding, setIsAdding] = useState(false); // Loading state for add more
+  const [isDeleting, setIsDeleting] = useState(null); // Loading state for delete (per item)
   const ITEMS_PER_PAGE = 5;
   const MAX_PAGE_BUTTONS = 5;
 
@@ -32,8 +35,10 @@ const ImageTable = () => {
     setIsLoading(true);
     try {
       const res = await axios.get(`${API_BASE}/gallery`);
+      console.log("Fetched gallery items:", res.data); // Debug: Log fetched data
       setGalleryItems(res.data);
     } catch (error) {
+      console.error("Error fetching gallery:", error);
       toast.error("Failed to fetch gallery.");
     } finally {
       setIsLoading(false);
@@ -41,12 +46,16 @@ const ImageTable = () => {
   };
 
   const handleDelete = async (itemId, imageIndex) => {
+    setIsDeleting(`${itemId}-${imageIndex}`); // Set deleting state for specific item
     try {
       await axios.delete(`${API_BASE}/gallery/delete-image/${itemId}/${imageIndex}`);
       toast.success("Image deleted successfully!");
       fetchGallery();
     } catch (error) {
+      console.error("Error deleting image:", error);
       toast.error("Failed to delete image.");
+    } finally {
+      setIsDeleting(null);
     }
   };
 
@@ -62,6 +71,7 @@ const ImageTable = () => {
     e.preventDefault();
     if (!editingItem) return;
 
+    setIsEditing(true); // Start editing loading
     const formData = new FormData();
     formData.append("imageHeading", editHeading);
     formData.append("title", editTitle);
@@ -77,7 +87,10 @@ const ImageTable = () => {
       setEditingItem(null);
       fetchGallery();
     } catch (err) {
+      console.error("Error updating image:", err);
       toast.error("Failed to update.");
+    } finally {
+      setIsEditing(false); // Stop editing loading
     }
   };
 
@@ -87,6 +100,7 @@ const ImageTable = () => {
       return toast.error("Heading and file are required.");
     }
 
+    setIsAdding(true); // Start adding loading
     const formData = new FormData();
     formData.append("imageHeading", addMoreHeading);
     formData.append("image", addMoreFile);
@@ -103,7 +117,10 @@ const ImageTable = () => {
       setAddMoreFile(null);
       fetchGallery();
     } catch (err) {
+      console.error("Error adding image:", err);
       toast.error("Failed to add image.");
+    } finally {
+      setIsAdding(false); // Stop adding loading
     }
   };
 
@@ -142,6 +159,11 @@ const ImageTable = () => {
     }
 
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  };
+
+  const handleImageError = (e, imageUrl) => {
+    console.error(`Failed to load image: ${imageUrl}`); // Debug: Log image load errors
+    e.target.src = "https://via.placeholder.com/300?text=Image+Not+Found"; // Fallback image
   };
 
   return (
@@ -195,9 +217,10 @@ const ImageTable = () => {
                     </td>
                     <td className="px-6 py-4">
                       <img
-                        src={`${API_BASE.replace("/api", "")}${img.imageUrl}`}
-                        alt={img.imageHeading}
+                        src={img.imageUrl} // Use absolute Cloudinary URL
+                        alt={img.imageHeading || "Gallery image"}
                         className="w-16 h-16 object-cover rounded-lg border"
+                        onError={(e) => handleImageError(e, img.imageUrl)} // Handle image load errors
                       />
                     </td>
                     <td className="px-6 py-4 text-sm">
@@ -209,10 +232,38 @@ const ImageTable = () => {
                               img.index
                             )
                           }
-                          className="bg-indigo-500 hover:bg-indigo-600 text-white p-2 rounded-lg"
+                          className={`bg-indigo-500 hover:bg-indigo-600 text-white p-2 rounded-lg relative ${
+                            isEditing ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
                           aria-label="Edit image"
+                          disabled={isEditing || isAdding || isDeleting}
                         >
-                          <Edit size={18} />
+                          {isEditing && (
+                            <svg
+                              className="animate-spin h-5 w-5 text-white absolute inset-0 m-auto"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
+                              ></path>
+                            </svg>
+                          )}
+                          <Edit
+                            size={18}
+                            className={isEditing ? "opacity-0" : "opacity-100"}
+                          />
                         </button>
                         <button
                           onClick={() =>
@@ -221,10 +272,44 @@ const ImageTable = () => {
                               index: img.index,
                             })
                           }
-                          className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg"
+                          className={`bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg relative ${
+                            isDeleting === `${img.itemId}-${img.index}`
+                              ? "opacity-50 cursor-not-allowed"
+                              : ""
+                          }`}
                           aria-label="Delete image"
+                          disabled={isEditing || isAdding || isDeleting}
                         >
-                          <Trash2 size={18} />
+                          {isDeleting === `${img.itemId}-${img.index}` && (
+                            <svg
+                              className="animate-spin h-5 w-5 text-white absolute inset-0 m-auto"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
+                              ></path>
+                            </svg>
+                          )}
+                          <Trash2
+                            size={18}
+                            className={
+                              isDeleting === `${img.itemId}-${img.index}`
+                                ? "opacity-0"
+                                : "opacity-100"
+                            }
+                          />
                         </button>
                         <button
                           onClick={() =>
@@ -232,10 +317,38 @@ const ImageTable = () => {
                               galleryItems.find((g) => g._id === img.itemId)
                             )
                           }
-                          className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg"
+                          className={`bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg relative ${
+                            isAdding ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
                           aria-label="Add more images"
+                          disabled={isEditing || isAdding || isDeleting}
                         >
-                          <Plus size={18} />
+                          {isAdding && (
+                            <svg
+                              className="animate-spin h-5 w-5 text-white absolute inset-0 m-auto"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
+                              ></path>
+                            </svg>
+                          )}
+                          <Plus
+                            size={18}
+                            className={isAdding ? "opacity-0" : "opacity-100"}
+                          />
                         </button>
                       </div>
                     </td>
@@ -300,8 +413,9 @@ const ImageTable = () => {
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="ieka w-full border p-2 rounded"
+                  className="w-full border p-2 rounded"
                   aria-label="Gallery title"
+                  disabled={isEditing}
                 />
               </div>
               <div>
@@ -314,26 +428,28 @@ const ImageTable = () => {
                   onChange={(e) => setEditHeading(e.target.value)}
                   className="w-full border p-2 rounded"
                   aria-label="Image heading"
+                  disabled={isEditing}
                 />
               </div>
               <div>
                 <label className="block text-sm mb-1">Current Image</label>
                 <div
-                  className="relative w-32 h-32 group"
+                  className={`relative w-32 h-32 group ${
+                    isEditing ? "opacity-50 pointer-events-none" : ""
+                  }`}
                   onClick={() =>
-                    document.getElementById("edit-file-input").click()
+                    !isEditing && document.getElementById("edit-file-input").click()
                   }
                 >
                   <img
                     src={
                       editFile
                         ? URL.createObjectURL(editFile)
-                        : `${API_BASE.replace("/api", "")}${
-                            editingItem.images[editingIndex].imageUrl
-                          }`
+                        : editingItem.images[editingIndex].imageUrl
                     }
                     alt="Preview"
                     className="w-full h-full object-cover rounded border"
+                    onError={(e) => handleImageError(e, editingItem.images[editingIndex].imageUrl)}
                   />
                   <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-sm rounded transition-opacity">
                     Click to change
@@ -346,24 +462,56 @@ const ImageTable = () => {
                   onChange={(e) => setEditFile(e.target.files[0])}
                   className="hidden"
                   aria-label="Upload new image"
+                  disabled={isEditing}
                 />
               </div>
               <div className="flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setEditingItem(null)}
-                  className="px-4 py-2 border rounded text-gray-600"
+                  className={`px-4 py-2 border rounded text-gray-600 ${
+                    isEditing ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                   aria-label="Cancel edit"
+                  disabled={isEditing}
                 >
                   Cancel
                 </button>
-
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded"
+                  className={`px-4 py-2 bg-indigo-600 text-white rounded relative ${
+                    isEditing ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                   aria-label="Save changes"
+                  disabled={isEditing}
                 >
-                  Save
+                  {isEditing ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
+                        ></path>
+                      </svg>
+                      Saving...
+                    </span>
+                  ) : (
+                    "Save"
+                  )}
                 </button>
               </div>
             </form>
@@ -387,11 +535,14 @@ const ImageTable = () => {
                   onChange={(e) => setAddMoreHeading(e.target.value)}
                   className="w-full border p-2 rounded"
                   aria-label="New image heading"
+                  disabled={isAdding}
                 />
               </div>
               <label
                 htmlFor="add-file-input"
-                className="border-2 border-dotted border-gray-400 p-4 mt-2 flex flex-col items-center gap-4 cursor-pointer hover:border-blue-500 transition min-h-[160px] justify-center"
+                className={`border-2 border-dotted border-gray-400 p-4 mt-2 flex flex-col items-center gap-4 cursor-pointer hover:border-blue-500 transition min-h-[160px] justify-center ${
+                  isAdding ? "opacity-50 pointer-events-none" : ""
+                }`}
               >
                 {addMoreFile ? (
                   <div className="w-32 h-32 rounded-lg overflow-hidden border">
@@ -414,7 +565,7 @@ const ImageTable = () => {
                       xmlns="http://www.w3.org/2000/svg"
                     >
                       <path
-                        d="Mទ M18.085 2.583H7.75a2.583 2.583 0 0 0-2.583 2.584v20.666a2.583 2.583 0 0 0 2.583 2.584h15.5a2.583 2.583 0 0 0 2.584-2.584v-15.5m-7.75-7.75 7.75 7.75m-7.75-7.75v7.75h7.75M15.5 23.25V15.5m-3.875 3.875h7.75"
+                        d="M18.085 2.583H7.75a2.583 2.583 0 0 0-2.583 2.584v20.666a2.583 2.583 0 0 0 2.583 2.584h15.5a2.583 2.583 0 0 0 2.584-2.584v-15.5m-7.75-7.75 7.75 7.75m-7.75-7.75v7.75h7.75M15.5 23.25V15.5m-3.875 3.875h7.75"
                         stroke="#2563EB"
                         strokeWidth="2"
                         strokeLinecap="round"
@@ -423,11 +574,7 @@ const ImageTable = () => {
                     </svg>
                     <p className="text-gray-500">Drag files here to upload</p>
                     <p className="text-gray-400">
-                      Or{" "}
-                      <span className="text-blue-500 underline">
-                        click here
-                      </span>{" "}
-                      to select a file
+                      Or <span className="text-blue-500 underline">click here</span> to select a file
                     </p>
                   </>
                 )}
@@ -438,6 +585,7 @@ const ImageTable = () => {
                   onChange={(e) => setAddMoreFile(e.target.files[0])}
                   className="hidden"
                   aria-label="Upload new image"
+                  disabled={isAdding}
                 />
               </label>
 
@@ -445,17 +593,49 @@ const ImageTable = () => {
                 <button
                   type="button"
                   onClick={() => setAddMoreItem(null)}
-                  className="px-9 py-2 border border-gray-500/50 bg-white hover:bg-blue-100/30 active:scale-95 transition-all text-gray-500 rounded"
+                  className={`px-9 py-2 border border-gray-500/50 bg-white hover:bg-blue-100/30 active:scale-95 transition-all text-gray-500 rounded ${
+                    isAdding ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                   aria-label="Cancel upload"
+                  disabled={isAdding}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 transition-all text-white rounded"
+                  className={`px-6 py-2 bg-indigo-500 hover:bg-indigo-600 active:scale-95 transition-all text-white rounded relative ${
+                    isAdding ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                   aria-label="Upload image"
+                  disabled={isAdding}
                 >
-                  Upload File
+                  {isAdding ? (
+                    <span className="flex items-center justify-center">
+                      <svg
+                        className="animate-spin h-5 w-5 mr-2 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
+                        ></path>
+                      </svg>
+                      Uploading...
+                    </span>
+                  ) : (
+                    "Upload File"
+                  )}
                 </button>
               </div>
             </form>
@@ -471,14 +651,16 @@ const ImageTable = () => {
               Delete Confirmation
             </h2>
             <p className="text-sm text-gray-600 mb-6">
-              Are you sure you want to delete this image? This action cannot be
-              undone.
+              Are you sure you want to delete this image? This action cannot be undone.
             </p>
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => setDeleteConfirm({ itemId: null, index: null })}
-                className="px-4 py-2 border border-gray-400 text-gray-600 rounded hover:bg-gray-100"
+                className={`px-4 py-2 border border-gray-400 text-gray-600 rounded hover:bg-gray-100 ${
+                  isDeleting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
                 aria-label="Cancel deletion"
+                disabled={isDeleting}
               >
                 Cancel
               </button>
@@ -487,10 +669,39 @@ const ImageTable = () => {
                   handleDelete(deleteConfirm.itemId, deleteConfirm.index);
                   setDeleteConfirm({ itemId: null, index: null });
                 }}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className={`px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 relative ${
+                  isDeleting ? "opacity-50 cursor-not-allowed" : ""
+                }`}
                 aria-label="Confirm deletion"
+                disabled={isDeleting}
               >
-                Confirm
+                {isDeleting ? (
+                  <span className="flex items-center justify-center">
+                    <svg
+                      className="animate-spin h-5 w-5 mr-2 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
+                      ></path>
+                    </svg>
+                    Deleting...
+                  </span>
+                ) : (
+                  "Confirm"
+                )}
               </button>
             </div>
           </div>

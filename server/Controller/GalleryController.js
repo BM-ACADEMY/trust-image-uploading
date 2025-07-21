@@ -1,12 +1,12 @@
-// backend/controllers/galleryController.js
-const fs = require('fs');
-const path = require('path');
+const cloudinary = require('cloudinary').v2;
 const GalleryItem = require('../models/GalleryItem');
 
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Configure Cloudinary
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // GET: All gallery items
 exports.getGalleryItems = async (req, res) => {
@@ -54,13 +54,26 @@ exports.createGalleryItem = async (req, res) => {
       const file = req.files[i];
       const heading = imageHeadings[i] || 'Untitled';
 
-      const ext = path.extname(file.originalname).toLowerCase();
-      const filename = `${Date.now()}-${i}${ext}`;
-      const filePath = path.join(uploadDir, filename);
-      fs.writeFileSync(filePath, file.buffer);
+      // Upload to Cloudinary using a Promise
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'image' },
+          (error, result) => {
+            if (error) {
+              return reject(error);
+            }
+            resolve(result);
+          }
+        );
+        stream.end(file.buffer);
+      });
+
+      if (!result.secure_url) {
+        throw new Error('Failed to upload image to Cloudinary');
+      }
 
       images.push({
-        imageUrl: `/uploads/${filename}`,
+        imageUrl: result.secure_url,
         imageHeading: heading,
       });
     }
@@ -71,12 +84,11 @@ exports.createGalleryItem = async (req, res) => {
     res.status(201).json(newGalleryItem);
   } catch (err) {
     console.error('POST /gallery/create error:', err.message);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: 'Failed to create gallery item: ' + err.message });
   }
 };
 
-
-
+// DELETE: Delete an image from a gallery item
 exports.deleteImageFromGalleryItem = async (req, res) => {
   try {
     const { itemId, imageIndex } = req.params;
@@ -91,16 +103,15 @@ exports.deleteImageFromGalleryItem = async (req, res) => {
       return res.status(400).json({ message: 'Invalid image index.' });
     }
 
-    // Delete image file from uploads folder
-    const fullPath = path.join(__dirname, '..', item.images[index].imageUrl);
-    if (fs.existsSync(fullPath)) {
-      fs.unlinkSync(fullPath);
-    }
+    // Extract public_id from Cloudinary URL
+    const imageUrl = item.images[index].imageUrl;
+    const publicId = imageUrl.split('/').pop().split('.')[0];
+    await cloudinary.uploader.destroy(publicId);
 
     // Remove image from array
     item.images.splice(index, 1);
 
-    // Optional: Delete gallery item if no images left
+    // Delete gallery item if no images left
     if (item.images.length === 0) {
       await item.deleteOne();
       return res.json({ message: 'Image deleted and gallery section removed as it had no more images.' });
@@ -114,7 +125,7 @@ exports.deleteImageFromGalleryItem = async (req, res) => {
   }
 };
 
-
+// PUT: Update a gallery image
 exports.updateGalleryImage = async (req, res) => {
   try {
     const { itemId, imageIndex } = req.params;
@@ -127,16 +138,24 @@ exports.updateGalleryImage = async (req, res) => {
 
     const index = parseInt(imageIndex);
 
-    // If index is -1, we append a new image
+    // If index is -1, append a new image
     if (index === -1) {
       if (!req.file) return res.status(400).json({ message: 'No image provided.' });
 
-      const filename = `${Date.now()}${path.extname(req.file.originalname)}`;
-      const filePath = path.join(uploadDir, filename);
-      fs.writeFileSync(filePath, req.file.buffer);
+      // Upload new image to Cloudinary
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'image' },
+          (error, result) => {
+            if (error) reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
 
       item.images.push({
-        imageUrl: `/uploads/${filename}`,
+        imageUrl: result.secure_url,
         imageHeading: imageHeading || 'Untitled',
       });
 
@@ -152,15 +171,25 @@ exports.updateGalleryImage = async (req, res) => {
     }
 
     if (req.file) {
-      const oldPath = path.join(__dirname, '..', item.images[index].imageUrl);
-      if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+      // Delete old image from Cloudinary
+      const oldImageUrl = item.images[index].imageUrl;
+      const publicId = oldImageUrl.split('/').pop().split('.')[0];
+      await cloudinary.uploader.destroy(publicId);
 
-      const filename = `${Date.now()}${path.extname(req.file.originalname)}`;
-      const filePath = path.join(uploadDir, filename);
-      fs.writeFileSync(filePath, req.file.buffer);
+      // Upload new image to Cloudinary
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'image' },
+          (error, result) => {
+            if (error) reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
 
       item.images[index] = {
-        imageUrl: `/uploads/${filename}`,
+        imageUrl: result.secure_url,
         imageHeading: imageHeading || item.images[index].imageHeading,
       };
     } else {
@@ -174,5 +203,3 @@ exports.updateGalleryImage = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-
-
