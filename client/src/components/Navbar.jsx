@@ -99,36 +99,10 @@ function Navbar() {
                 முகப்பு
               </Link>
             </li>
-            <li ref={servicesRef}>
-              <button
-                onClick={() => setIsServicesOpen(!isServicesOpen)}
-                className="text-blue-600 hover:text-blue-800 flex items-center justify-center w-full"
-              >
+           <li>
+              <Link to="/Services" className="text-blue-600 hover:text-blue-800 block" onClick={() => setIsMobileMenuOpen(false)}>
                 சேவைகள்
-                <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isServicesOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
-                </svg>
-              </button>
-              {isServicesOpen && (
-                <div className="flex flex-col gap-2 pt-2">
-                  <Link to="/services/web" className="text-blue-600 hover:text-blue-800" onClick={() => {
-                    setIsServicesOpen(false);
-                    setIsMobileMenuOpen(false);
-                  }}>மருத்துவ உதவி</Link>
-                  <Link to="/services/mobile" className="text-blue-600 hover:text-blue-800" onClick={() => {
-                    setIsServicesOpen(false);
-                    setIsMobileMenuOpen(false);
-                  }}>வாழ்வாதார உதவிகள்</Link>
-                  <Link to="/services/consulting" className="text-blue-600 hover:text-blue-800" onClick={() => {
-                    setIsServicesOpen(false);
-                    setIsMobileMenuOpen(false);
-                  }}>தாவா பணிகள்</Link>
-                  <Link to="/services/common" className="text-blue-600 hover:text-blue-800" onClick={() => {
-                    setIsServicesOpen(false);
-                    setIsMobileMenuOpen(false);
-                  }}>பொதுப்பணிகள்</Link>
-                </div>
-              )}
+              </Link>
             </li>
             <li>
               <Link to="/presentations" className="text-blue-600 hover:text-blue-800 block" onClick={() => setIsMobileMenuOpen(false)}>

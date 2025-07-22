@@ -20,7 +20,7 @@ function App() {
             <Route path="/Services" element={<Services />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/gallery" element={<Gallery />} />
-            <Route path="/admin" element={<Admin />} />
+            <Route path="/admin-kiet-trust" element={<Admin />} />
           </Routes>
         </main>
         <Footer />
