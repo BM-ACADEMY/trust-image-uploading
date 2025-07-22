@@ -41,10 +41,10 @@ const Footer = () => {
               <p>எண்.36, பழைய பட்டினப்பாதை, கோட்டக்குப்பம் வானூர் தாலுகா, விழுப்புரம் மாவட்டம் 605104</p>
 
               {/* Mail Row */}
-              <div className="flex items-center gap-2 pt-2">
+              {/* <div className="flex items-center gap-2 pt-2">
                 <MdEmail className="text-xl text-blue-600" />
                 <span>info@example.com</span>
-              </div>
+              </div> */}
 
               {/* Facebook Row */}
               <div className="flex items-center gap-2">
