@@ -7,6 +7,7 @@ import Contact from './pages/Contact';
 import Gallery from './pages/GalleryAdminPanel';
 import Admin from './pages/GalleryAdminPanel';
 import Presentations from './pages/Presentations';
+import WhatsAppChatIcon from './components/floatingcomponent';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/admin-kiet-trust" element={<Admin />} />
           </Routes>
         </main>
+        <WhatsAppChatIcon />
         <Footer />
       </div>
     </Router>
