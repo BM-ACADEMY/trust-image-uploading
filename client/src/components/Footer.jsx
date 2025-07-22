@@ -49,7 +49,14 @@ const Footer = () => {
               {/* Facebook Row */}
               <div className="flex items-center gap-2">
                 <FaFacebookF className="text-xl text-blue-600" />
-                <span>/</span>
+                <a
+                  href="https://www.facebook.com/share/194FKkHzRc/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                >
+                  kiettrust
+                </a>
               </div>
             </div>
           </div>
@@ -59,7 +66,9 @@ const Footer = () => {
       {/* Bottom Copyright */}
       <p className="pt-4 text-center text-sm pb-5">
         Copyright {new Date().getFullYear()} ©{' '}
-        <a href="https://bmtechx.in/" target='_blank' className="underline hover:text-grey">BM TECHx</a>. All Right Reserved.
+        <a href="https://bmtechx.in/" target='_blank' rel="noopener noreferrer" className="underline hover:text-grey">
+          BM TECHx
+        </a>. All Right Reserved.
       </p>
     </footer>
   );

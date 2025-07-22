@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import bisbilla from '../assets/bisbills.png'
-import hero1 from '../assets/hero.png'
+import { FaHandHoldingUsd, FaWhatsapp } from 'react-icons/fa';
+import bisbilla from '../assets/bisbills.png';
+import hero1 from '../assets/hero.png';
 
 const HeroSection = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false); // Add this line
 
   return (
     <section
@@ -18,7 +20,7 @@ const HeroSection = () => {
         {/* Center PNG Image */}
         <div className="flex justify-center py-8">
           <img
-            src={bisbilla} // 🔁 Replace with your image path
+            src={bisbilla}
             alt="Center Image"
             className="w-60 h-auto object-contain"
           />
@@ -35,6 +37,7 @@ const HeroSection = () => {
             transition={{ duration: 0.8, ease: 'easeOut' }}
           >
             <button
+              onClick={() => setShowModal(true)} // ✅ Show modal on click
               className="mb-6 flex items-center space-x-2 border border-indigo-600 text-indigo-600 text-xs rounded-full px-4 pr-1.5 py-1.5 hover:bg-indigo-50 transition"
               type="button"
             >
@@ -69,7 +72,7 @@ const HeroSection = () => {
 
             <div className="flex flex-col md:flex-row items-center mt-8 gap-3">
               <a
-                href="https://wa.me/919944288271"
+                href="https://wa.me/919994665870"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-indigo-600 text-white px-6 pr-2.5 py-2.5 rounded-full text-sm font-medium flex items-center space-x-2 hover:bg-indigo-700 transition"
@@ -94,31 +97,82 @@ const HeroSection = () => {
             </div>
           </motion.div>
 
-        
-        {/* Right Animated Images */}
-<motion.div
-  aria-label="Photos of leaders"
-  className="flex flex-row gap-6 pb-6"
-  initial={{ opacity: 0, x: 50 }}
-  animate={{ opacity: 1, x: 0 }}
-  transition={{ duration: 1, ease: 'easeOut' }}
->
-  {[hero1].map((src, index) => (
-    <motion.img
-      key={index}
-      src={src}
-      alt={`Leader ${index + 1}`}
-      className="w-auto h-72 rounded-lg hover:scale-105 transition duration-300 object-cover "
-      whileHover={{ scale: 1.08 }}
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.2 * index, duration: 0.5 }}
-    />
-  ))}
-</motion.div>
+          {/* Right Animated Images */}
+          <motion.div
+            aria-label="Photos of leaders"
+            className="flex flex-row gap-6 pb-6"
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 1, ease: 'easeOut' }}
+          >
+            {[hero1].map((src, index) => (
+              <motion.img
+                key={index}
+                src={src}
+                alt={`Leader ${index + 1}`}
+                className="w-auto h-72 rounded-lg hover:scale-105 transition duration-300 object-cover"
+                whileHover={{ scale: 1.08 }}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 * index, duration: 0.5 }}
+              />
+            ))}
+          </motion.div>
 
         </div>
       </main>
+
+      {/* ✅ Modal Section */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center px-4">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md text-center">
+            <h2 className="text-xl md:text-2xl font-bold mb-4 text-blue-800">நன்றி!</h2>
+            <p className="text-gray-700 mb-2">உங்கள் நன்கொடை வழங்க கீழுள்ள வங்கிக் கணக்கு விவரங்களை பயன்படுத்துங்கள்:</p>
+
+            <div className="bg-gray-100 rounded-md p-4 mt-4 text-left space-y-3">
+              <div className="flex items-center gap-2">
+                <FaHandHoldingUsd className="text-green-600" />
+                <span className="font-semibold">Trust Name:</span>
+                <span>Kottakuppam Islamic Education Trust</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-blue-700">🏦 Bank:</span>
+                <span>Bank of India (BOI)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-blue-700">🔢 A/C No:</span>
+                <span>806920110000184</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-blue-700">🔗 IFSC:</span>
+                <span>BKID0008069</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="font-semibold text-blue-700">📍 Branch:</span>
+                <span>Kottakuppam</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center gap-4 mt-6 flex-wrap">
+              <button
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                onClick={() => setShowModal(false)}
+              >
+                OK
+              </button>
+              <a
+                href="https://wa.me/919994665870"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition flex items-center justify-center gap-2"
+              >
+                <FaWhatsapp />
+                WhatsApp
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 };

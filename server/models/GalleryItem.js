@@ -6,7 +6,7 @@ const imageSchema = new mongoose.Schema({
 }, { _id: false });
 
 const galleryItemSchema = new mongoose.Schema({
-  title: { type: String, required: true },
+  title: { type: String },
   images: { type: [imageSchema], required: true },
   createdAt: { type: Date, default: Date.now }
 });

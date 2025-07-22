@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/trust logo.jpg';
+import { FaHandHoldingUsd, FaWhatsapp } from 'react-icons/fa';
 
 function Navbar() {
   const [isServicesOpen, setIsServicesOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const servicesRef = useRef(null);
 
   useEffect(() => {
@@ -21,14 +23,12 @@ function Navbar() {
     <>
       <nav className="bg-white shadow-lg p-4 sticky top-0 z-50 font-sans">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo */}
           <div className="flex-shrink-0">
             <Link to="/">
               <img src={logo} alt="Logo" className="h-14 w-auto max-sm:h-10" />
             </Link>
           </div>
 
-          {/* Desktop Menu */}
           <div className="hidden md:flex justify-center flex-grow">
             <ul className="flex items-center space-x-8 text-lg font-medium">
               <li>
@@ -37,26 +37,7 @@ function Navbar() {
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-800 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
                 </Link>
               </li>
-              {/* <li className="relative" ref={servicesRef}>
-                <button
-                  onClick={() => setIsServicesOpen(!isServicesOpen)}
-                  className="text-blue-600 hover:text-blue-800 flex items-center"
-                >
-                சேவைகள்
-                  <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                {isServicesOpen && (
-                  <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-lg py-2 z-50">
-                    <Link to="/services/web" className="block px-4 py-2 text-blue-600 hover:bg-blue-50" onClick={() => setIsServicesOpen(false)}> மருத்துவ உதவி </Link>
-                    <Link to="/services/mobile" className="block px-4 py-2 text-blue-600 hover:bg-blue-50" onClick={() => setIsServicesOpen(false)}>   வாழ்வாதார உதவிகள் </Link>
-                    <Link to="/services/consulting" className="block px-4 py-2 text-blue-600 hover:bg-blue-50" onClick={() => setIsServicesOpen(false)}>தாவா பணிகள் </Link>
-                  <Link to="/services/common" className="block px-4 py-2 text-blue-600 hover:bg-blue-50" onClick={() => setIsServicesOpen(false)}>பொதுப்பணிகள் </Link>
-                  </div>
-                )}
-              </li> */}
-               <li>
+              <li>
                 <Link to="/Services" className="text-blue-600 hover:text-blue-800 relative group">
                   சேவைகள்
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-800 scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left"></span>
@@ -77,17 +58,17 @@ function Navbar() {
             </ul>
           </div>
 
-          {/* Get in Touch (Desktop Only) */}
+          {/* Desktop Donate Button */}
           <div className="hidden md:block">
-            <Link
-              to="/get-in-touch"
-              className="bg-red-500 text-white px-6 py-2 rounded-full hover:bg-red-600 transition"
+            <button
+              onClick={() => setShowModal(true)}
+              className="bg-red-500 text-white px-6 py-2 rounded-full hover:bg-red-600 transition flex items-center gap-2"
             >
+              <FaHandHoldingUsd />
               Donate
-            </Link>
+            </button>
           </div>
 
-          {/* Hamburger */}
           <div className="md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -106,7 +87,7 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Animated Menu */}
+        {/* Mobile Menu */}
         <div
           className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
             isMobileMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
@@ -114,11 +95,7 @@ function Navbar() {
         >
           <ul className="flex flex-col items-center text-center space-y-4 py-4 text-lg">
             <li>
-              <Link
-                to="/"
-                className="text-blue-600 hover:text-blue-800 block"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
+              <Link to="/" className="text-blue-600 hover:text-blue-800 block" onClick={() => setIsMobileMenuOpen(false)}>
                 முகப்பு
               </Link>
             </li>
@@ -127,7 +104,7 @@ function Navbar() {
                 onClick={() => setIsServicesOpen(!isServicesOpen)}
                 className="text-blue-600 hover:text-blue-800 flex items-center justify-center w-full"
               >
-                 சேவைகள்
+                சேவைகள்
                 <svg className="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isServicesOpen ? "M5 15l7-7 7 7" : "M19 9l-7 7-7-7"} />
                 </svg>
@@ -137,53 +114,102 @@ function Navbar() {
                   <Link to="/services/web" className="text-blue-600 hover:text-blue-800" onClick={() => {
                     setIsServicesOpen(false);
                     setIsMobileMenuOpen(false);
-                  }}>மருத்துவ உதவி </Link>
+                  }}>மருத்துவ உதவி</Link>
                   <Link to="/services/mobile" className="text-blue-600 hover:text-blue-800" onClick={() => {
                     setIsServicesOpen(false);
                     setIsMobileMenuOpen(false);
-                  }}> வாழ்வாதார உதவிகள் </Link>
+                  }}>வாழ்வாதார உதவிகள்</Link>
                   <Link to="/services/consulting" className="text-blue-600 hover:text-blue-800" onClick={() => {
                     setIsServicesOpen(false);
                     setIsMobileMenuOpen(false);
-                  }}>தாவா பணிகள் </Link>
+                  }}>தாவா பணிகள்</Link>
                   <Link to="/services/common" className="text-blue-600 hover:text-blue-800" onClick={() => {
                     setIsServicesOpen(false);
                     setIsMobileMenuOpen(false);
-                  }}>பொதுப்பணிகள் </Link>
+                  }}>பொதுப்பணிகள்</Link>
                 </div>
               )}
             </li>
             <li>
-              <Link
-                to="/presentations"
-                className="text-blue-600 hover:text-blue-800 block"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
+              <Link to="/presentations" className="text-blue-600 hover:text-blue-800 block" onClick={() => setIsMobileMenuOpen(false)}>
                 சமூகப் பணிகள்
               </Link>
             </li>
             <li>
-              <Link
-                to="/contact"
-                className="text-blue-600 hover:text-blue-800 block"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
+              <Link to="/contact" className="text-blue-600 hover:text-blue-800 block" onClick={() => setIsMobileMenuOpen(false)}>
                 தொடர்பு
               </Link>
+            </li>
+            {/* Mobile Donate Button */}
+            <li>
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setShowModal(true);
+                }}
+                className="bg-red-500 text-white px-5 py-2 rounded-full shadow-lg hover:bg-red-600 transition flex items-center gap-2"
+              >
+                <FaHandHoldingUsd />
+                Donate
+              </button>
             </li>
           </ul>
         </div>
       </nav>
 
-      {/* Sticky Floating Get in Touch Button on Mobile */}
-      <div className="fixed bottom-4 right-4 z-50 md:hidden">
-        <Link
-          to="/get-in-touch"
-          className="bg-red-500 text-white px-5 py-3 rounded-full shadow-lg hover:bg-red-600 transition"
-        >
-          Donate
-        </Link>
+      {/* Modal */}
+    {showModal && (
+  <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex justify-center items-center px-4">
+    <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md text-center">
+      <h2 className="text-xl md:text-2xl font-bold mb-4 text-blue-800">நன்றி!</h2>
+      <p className="text-gray-700 mb-2">உங்கள் நன்கொடை வழங்க கீழுள்ள வங்கிக் கணக்கு விவரங்களை பயன்படுத்துங்கள்:</p>
+
+      <div className="bg-gray-100 rounded-md p-4 mt-4 text-left space-y-3">
+        <div className="flex items-center gap-2">
+          <FaHandHoldingUsd className="text-green-600" />
+          <span className="font-semibold">Trust Name:</span>
+          <span>Kottakuppam Islamic Education Trust</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-blue-700">🏦 Bank:</span>
+          <span>Bank of India (BOI)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-blue-700">🔢 A/C No:</span>
+          <span>806920110000184</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-blue-700">🔗 IFSC:</span>
+          <span>BKID0008069</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-blue-700">📍 Branch:</span>
+          <span>Kottakuppam</span>
+        </div>
       </div>
+
+      <div className="flex justify-between items-center gap-4 mt-6 flex-wrap">
+        <button
+          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+          onClick={() => setShowModal(false)}
+        >
+          OK
+        </button>
+        <a
+          href="https://wa.me/919994665870"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition flex items-center justify-center gap-2"
+        >
+          <FaWhatsapp />
+          WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+)}
+
+
     </>
   );
 }
